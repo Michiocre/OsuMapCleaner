@@ -36,3 +36,5 @@ After i deleted a lot of the files i wanted to keep while testing i wrote a AHK 
 ## Checking Files
 
 At the end of the programm it will tell you to check some maps for pictures, or sound files. These are the maps the Programm isnt sure about, when you redownload them and there isnt a Background in the original .osz file then the programm will always throw this error.
+
+### If you look at all the images in Test Doku sorted by date you will see how it went down
