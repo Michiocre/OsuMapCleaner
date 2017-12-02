@@ -5,3 +5,9 @@ D:\Projekts\Other Stuff\Osu Cleaner\OsuMapCleaner\OsuMapCleaner\obj\Debug\OsuMap
 D:\Projekts\Other Stuff\Osu Cleaner\OsuMapCleaner\OsuMapCleaner\obj\Debug\OsuMapCleaner.csproj.CoreCompileInputs.cache
 D:\Projekts\Other Stuff\Osu Cleaner\OsuMapCleaner\OsuMapCleaner\obj\Debug\OsuMapCleaner.exe
 D:\Projekts\Other Stuff\Osu Cleaner\OsuMapCleaner\OsuMapCleaner\obj\Debug\OsuMapCleaner.pdb
+D:\Projekts\Other Stuff\OsuMapCleaner\OsuMapCleaner\OsuMapCleaner\bin\Debug\OsuMapCleaner.exe.config
+D:\Projekts\Other Stuff\OsuMapCleaner\OsuMapCleaner\OsuMapCleaner\bin\Debug\OsuMapCleaner.exe
+D:\Projekts\Other Stuff\OsuMapCleaner\OsuMapCleaner\OsuMapCleaner\bin\Debug\OsuMapCleaner.pdb
+D:\Projekts\Other Stuff\OsuMapCleaner\OsuMapCleaner\OsuMapCleaner\obj\Debug\OsuMapCleaner.csproj.CoreCompileInputs.cache
+D:\Projekts\Other Stuff\OsuMapCleaner\OsuMapCleaner\OsuMapCleaner\obj\Debug\OsuMapCleaner.exe
+D:\Projekts\Other Stuff\OsuMapCleaner\OsuMapCleaner\OsuMapCleaner\obj\Debug\OsuMapCleaner.pdb
