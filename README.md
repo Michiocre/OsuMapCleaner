@@ -28,7 +28,7 @@ To benchmark it i downloaded all of the [Torrent Beatmappacks](https://osu.hiram
 
 After deleting everything the programm checks that every Mapset still has at least one image and one music file. When it doesnt find any the map id is listed in the file.
 
-## Autohotkey
+## Autohotkey -- This is only optional
 
 After i deleted a lot of the files i wanted to keep while testing i wrote a AHK script that will automatically download all the maps listed in the error file. To use this you have to move the script into your maps folder. It will wait until you press CTRL+J, but for it to work correctly you first have to loggin into Osu in Google Chrome and tick the box to stay logged in. After pressing the Hotkey it will open a lot of new Tabs end everyone of them will download one file. You cant do anything else while its opening new Tabs but once it stops you can do whatever you want while waiting for the downloads to finish. But only close the Tabs when all dowloads are finished else it wont download all of the files.
 * [Autohotkey](https://autohotkey.com/)
