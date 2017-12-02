@@ -26,15 +26,11 @@ To benchmark it i downloaded all of the [Torrent Beatmappacks](https://osu.hiram
 
 ## The Error File
 
-After deleting everything the programm checks that every Mapset still has at least one image and one music file. When it doesnt find any the map id is listed in the file.
+After the deletion process is finished it will quickly look over the Beatmap folders to make sure there are no maps without any sound files or without at least one picture. If this is the case it will ask you to check these folders and it will also write all the Beatmap Ids into the ErrorList.txt file. You should be to worried about it if some maps show up, older maps (especialy unranked) somtimes dont have an image while still including it in the .osu file. Feel free to look into those folders and .osu files to find out if something is wrong. If some files go missing that should be there (and are there when you redownload) let me know.
 
 ## Autohotkey -- This is only optional
 
 After i deleted a lot of the files i wanted to keep while testing i wrote a AHK script that will automatically download all the maps listed in the error file. To use this you have to move the script into your maps folder. It will wait until you press CTRL+J, but for it to work correctly you first have to loggin into Osu in Google Chrome and tick the box to stay logged in. After pressing the Hotkey it will open a lot of new Tabs end everyone of them will download one file. You cant do anything else while its opening new Tabs but once it stops you can do whatever you want while waiting for the downloads to finish. But only close the Tabs when all dowloads are finished else it wont download all of the files.
 * [Autohotkey](https://autohotkey.com/)
-
-## Checking Files
-
-At the end of the programm it will tell you to check some maps for pictures, or sound files. These are the maps the Programm isnt sure about, when you redownload them and there isnt a Background in the original .osz file then the programm will always throw this error.
 
 ### If you look at all the images in Test Doku sorted by date you will see how it went down
