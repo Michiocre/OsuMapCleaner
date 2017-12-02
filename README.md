@@ -34,3 +34,5 @@ After i deleted a lot of the files i wanted to keep while testing i wrote a AHK 
 * [Autohotkey](https://autohotkey.com/)
 
 ### If you look at all the images in Test Doku sorted by date you will see how it went down
+
+### I wont compensate you for any files lost
