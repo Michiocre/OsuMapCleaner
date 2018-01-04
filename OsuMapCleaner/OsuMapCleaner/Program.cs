@@ -156,7 +156,7 @@ namespace OsuMapCleaner
 
 
             Console.WriteLine("#-----------------------#");
-            Console.WriteLine("All the Files were deleted, now its searching for Errors (this will be much quicker)");
+            Console.WriteLine("Checking all the Folders for missing Background");
             Console.WriteLine("#-----------------------#");
 
             //Finding out if all the maps have at least one background (Exept when thats intended)
@@ -193,14 +193,18 @@ namespace OsuMapCleaner
                 if (!hasBackground)
                 {
                     string outp = folder.Split('\\')[folder.Split('\\').Length - 1];
+                    string number = outp.Split(' ')[0];
 
-                    numbers.Add(outp.Split(' ')[0]);    //Lists all the map ids
+                    if (!numbers.Contains(number))
+                    {
+                        numbers.Add(number);        //Lists the beatmap ids when its missing
+                    }
 
-                    Console.WriteLine("Check: " + outp + "   | for missing images");
+                    Console.WriteLine("Check: " + outp);
                 }
             }
             Console.WriteLine("#-----------------------#");
-            Console.WriteLine("First iteration complete");
+            Console.WriteLine("Checking all Folders for missing Audio");
             Console.WriteLine("#-----------------------#");
 
 
@@ -225,9 +229,39 @@ namespace OsuMapCleaner
                         numbers.Add(number);        //Lists the beatmap ids when its missing
                     }
 
-                    Console.WriteLine("Check: " + outp + "   | for missing Audio");
+                    Console.WriteLine("Check: " + outp);
                 }
             }
+
+
+            Console.WriteLine("#-----------------------#");
+            Console.WriteLine("Checking all Folders for missing Osu Files");
+            Console.WriteLine("#-----------------------#");
+
+            foreach (string folder in beatmapFolders)
+            {
+                List<string> files = Directory.EnumerateFiles(folder).ToList<string>();
+                bool hasBeatmap = false;
+                foreach (string file in files)
+                {
+                    if (Path.GetExtension(file).ToLower() == ".osu")
+                    {
+                        hasBeatmap = true;
+                    }
+                }
+                if (!hasBeatmap)
+                {
+                    string outp = folder.Split('\\')[folder.Split('\\').Length - 1];
+                    string number = outp.Split(' ')[0];
+                    if (!numbers.Contains(number))
+                    {
+                        numbers.Add(number);        //Lists the beatmap ids when its missing
+                    }
+
+                    Console.WriteLine("Check: " + outp);
+                }
+            }
+
 
             //Creates the Text for the error file
             string fileWrite = "";
@@ -246,6 +280,36 @@ namespace OsuMapCleaner
             }
 
             fileWrite = fileWrite.Trim(','); //Deltes trailing ,
+
+            Console.WriteLine("#-----------------------#");
+            Console.WriteLine("Checking all Folders for Duplicates");
+            Console.WriteLine("#-----------------------#");
+
+
+            List<string> allThemNumbers = new List<string>();
+
+            foreach (string folder in beatmapFolders)
+            {
+                string outp = folder.Split('\\')[folder.Split('\\').Length - 1];
+                string number = outp.Split(' ')[0];
+                if (!allThemNumbers.Contains(number))
+                {
+                    try
+                    {
+                        Convert.ToInt32(number); // This sorts out all the Beatmaps without ids
+                        allThemNumbers.Add(number);
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Check " + outp);
+                }
+
+            }
 
             File.WriteAllText(Directory.GetCurrentDirectory() + "\\ErrorList.txt", fileWrite);
             Console.WriteLine("#-----------------------#");
