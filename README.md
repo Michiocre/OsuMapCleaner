@@ -20,15 +20,19 @@ After the Rewrite i choose the instead of deleting everything i dont like, i sho
 
 ## How to use it
 
-You just have to pull the .exe file into your songs folder -> start it and press ENTER
+You just have to pull the .exe file into your songs folder and start it
 
 ## How much will it delete
 
 To benchmark it i downloaded all of the [Torrent Beatmappacks](https://osu.hiramiya.me/torrents.htm), this is just a bit above 100 Gb of maps. After i ran my programm it shrunk down to 50 Gb. Since these are Beatmaps from 2007 till 2017 its a pretty good baseline to say it will get rid of **50%** assuming you downloaded everymap with its video.
 
+After the rewrite it will probably delete 1-5% more.
+
 ## The Error File
 
 After the deletion process is finished it will quickly look over the Beatmap folders to make sure there are no maps without any sound files or without at least one picture. If this is the case it will ask you to check these folders and it will also write all the Beatmap Ids into the ErrorList.txt file. You should be to worried about it if some maps show up, older maps (especialy unranked) somtimes dont have an image while still including it in the .osu file. Feel free to look into those folders and .osu files to find out if something is wrong. If some files go missing that should be there (and are there when you redownload) let me know.
+
+The programm will also let you know when a beatmap id apears more then once. This is the case when you downloaded a map twice and the installation folder got a differnet name, you can just delete the older of the two folders.
 
 ## Autohotkey -- This is only optional
 
