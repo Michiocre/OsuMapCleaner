@@ -16,6 +16,8 @@ So im gonna delete all the videos, storyboard elements, custom skins and hitsoun
 
 Later i realised i also had to watch out for some rouge .ogg and .jpeg files
 
+After the Rewrite i choose the instead of deleting everything i dont like, i should rather keep everything that i want and delete the rest, so the Programm searches through the .osu files and determins what to keep and what to delete.
+
 ## How to use it
 
 You just have to pull the .exe file into your songs folder -> start it and press ENTER
