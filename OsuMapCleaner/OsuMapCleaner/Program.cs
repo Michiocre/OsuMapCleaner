@@ -12,130 +12,366 @@ namespace OsuMapCleaner
 {
     class Program
     {
+
         static int FileCount = 0;
         static long s = 0;
 
-        //All the Extensions Counting as images
-        static List<string> imageList = new List<string>(new string[] {".png", ".jpg", ".jpeg"});
+        static string workingDirectory = Directory.GetCurrentDirectory();
+        static string osuFolder = Path.GetDirectoryName(workingDirectory);
+        static string output = "";
+        
+        static List<string> imageList = new List<string>(new string[] { ".png", ".jpg", ".jpeg" });
+        
+        static List<string> musicList = new List<string>(new string[] { ".mp3", ".ogg" });
 
-        //All the files that count as music files who will be whitelisted
-        static List<string> musicWhiteList = new List<string>(new string[] { ".mp3", ".ogg"});
+        static List<string> noBackground = new List<string>();
 
-        //All the other files that will be whitelisted
-        static List<string> whiteList = new List<string>(new string[] {".osu", ".osz", ".osr"});
-
-        //Everything that is whitelisted will not get deleted no matter what
-
-        //Initialisation of some generaly used Lists
-        static List<string> numbers = new List<string>();
-        static List<string> noBackgroundList = new List<string>();
+        static List<string> errorList = new List<string>();
 
         static void Main(string[] args)
         {
-            whiteList.AddRange(musicWhiteList);
+            List<string> beatmapFolders = Directory.EnumerateDirectories(workingDirectory).ToList<string>();
 
-            string[] beatmapFolders = Directory.EnumerateDirectories(Directory.GetCurrentDirectory()).ToArray<string>();
-            string input = Console.ReadLine(); //Waiting for the first enter
-            
-
-            //Main Part of the Code here the files will either get deleted or let through
-
-            //Variables used to calculate how far through the folders we are
-            double lastPercent = -1;
-            double percent;
-
-            for (int i = 0; i < beatmapFolders.Length; i++)
+            int i = 0;
+            foreach (string beatmapFolder in beatmapFolders)
             {
-                string currentFolder = beatmapFolders[i];
-                percent = Math.Round(i / (beatmapFolders.Length / 100.0));
-                List<string> files = Directory.EnumerateFiles(currentFolder).ToList<string>();
+                string percent = (100 * i / beatmapFolders.Count).ToString();
 
-                //Searching for the Backgrounds   
-                List<string> backgrounds = new List<string>();
-                string noBackground = "";
+                output = TextBalancer(3, percent, 1);
                 
-                //During the first iteration it will read all the .osu files and search for all the used background files
+
+                List<string> files = Directory.EnumerateFiles(beatmapFolder).ToList<string>();
+                List<string> subFolders = Directory.EnumerateDirectories(beatmapFolder).ToList<string>();
+
+                List<string> saveFiles = new List<string>();
+
                 foreach (string file in files)
                 {
                     if (Path.GetExtension(file).ToLower() == ".osu")
                     {
-                        string raw = File.ReadAllText(file);
-                        try
-                        {
-                            string bgName = Regex.Split(Regex.Split(raw, "0,0,\"")[1], "\"")[0]; //The backgroundname should be between the first two quotes
+                        string lines = File.ReadAllText(file);
+                        lines = lines.Split(new[] { "AudioFilename: " }, StringSplitOptions.None)[1];
+                        string audioFile = lines.Split(new char[] { '\r', '\n'})[0];
+                        saveFiles.Add(Path.GetFileName(audioFile).ToLower());
 
-                            if (imageList.Contains(Path.GetExtension(bgName).ToLower())) //If it isnt an image it will try again between the next two quotes
+                        string[] lines1 = lines.Split(new[] { "Video," }, StringSplitOptions.None);
+                        
+                        if (lines1.Length >= 2)
+                        {
+                            lines = lines1[0] + lines1[1].Split(new[] { "\r" }, StringSplitOptions.None)[1];
+                        }
+
+
+                        string[] lines2 = lines.Split(new[] { ",\"" }, StringSplitOptions.None);
+                        if (lines2.Length <= 1)
+                        {
+                            noBackground.Add(beatmapFolder);
+                        }
+                        else
+                        {
+                            string bg = lines2[1].Split(new[] { "\"" }, StringSplitOptions.None)[0];
+                            if (imageList.Contains(Path.GetExtension(bg).ToLower()))
                             {
-                                if (!backgrounds.Contains(bgName))
-                                {
-                                    backgrounds.Add(bgName);
-                                }
+                                saveFiles.Add(Path.GetFileName(bg).ToLower());
                             }
                             else
                             {
-                                bgName = Regex.Split(Regex.Split(raw, "0,0,\"")[3], "\"")[2];
-                                if (imageList.Contains(Path.GetExtension(bgName).ToLower())) //If it still isnt an image there is no background
+                                if (lines2.Length <= 2)
                                 {
-                                    if (!backgrounds.Contains(bgName))
+                                    noBackground.Add(beatmapFolder);
+                                }
+                                else
+                                {
+                                    bg = lines2[2].Split(new[] { "\"" }, StringSplitOptions.None)[0];
+                                    if (imageList.Contains(Path.GetExtension(bg).ToLower()))
                                     {
-                                        backgrounds.Add(bgName);
+                                        saveFiles.Add(Path.GetFileName(bg).ToLower());
+                                    }
+                                    else
+                                    {
+                                        noBackground.Add(beatmapFolder);
                                     }
                                 }
                             }
                         }
-                        catch (IndexOutOfRangeException) //If there are no quotations in the whole file there cant be a background -> these will get written in the noBackground.txt
-                        {
-                            noBackground = currentFolder;
-                        }
+                        
+
+                        saveFiles.Add(Path.GetFileName(file).ToLower());
                     }
                 }
-
-                if (noBackground != "")
-                {
-                    noBackgroundList.Add(noBackground);
-                }
-
-                //Now we have all the background filenames, and now which files dont have a background
 
                 foreach (string file in files)
                 {
-                    bool delete = true;
-                    string extension = Path.GetExtension(file).ToLower(); //This is very important as sometimes there will be: mp3, MP3, Mp3
-                    if (whiteList.Contains(extension)) //If its whitelisted
+                    Console.Write("[" + output + "%] ");
+                    if (!saveFiles.Contains(Path.GetFileName(file).ToLower()))
                     {
-                        delete = false;
+
+                        DeleteFile(file);
+                    }
+                    Console.WriteLine("");
+                    
+                }
+
+                foreach (string subFolder in subFolders)
+                {
+                    DeleteFolder(subFolder, saveFiles);
+                }
+
+                i++;
+            }
+
+
+            Console.WriteLine("##################################");
+            PrintStatistics();
+            Console.WriteLine("##################################");
+
+            Console.WriteLine("Press ENTER to proced to the after Test where it checks every Folder for missing Items");
+            Console.ReadLine();
+
+            foreach (string folder in beatmapFolders)
+            {
+                int beatmapCounter = 0;
+                int imageCounter = 0;
+                int musicCounter = 0;
+                int otherCounter = 0;
+
+                foreach (string file in GetVeryAllFiles(folder))
+                {
+                    if (Path.GetExtension(file).ToLower() == ".osu")
+                    {
+                        beatmapCounter++;
+                    }
+                    else if (musicList.Contains(Path.GetExtension(file).ToLower()))
+                    {
+                        musicCounter++;
+                    }
+                    else if(imageList.Contains(Path.GetExtension(file).ToLower()))
+                    {
+                        imageCounter++;
                     }
                     else
                     {
-                        foreach (string bg in backgrounds)
+                        otherCounter++;
+                    }
+                }
+                string id = "";
+                if (beatmapCounter <= 0)
+                {
+                    Console.WriteLine(TextBalancer(75,Path.GetFileName(folder), 2) + " Beatmaps");
+                    id = Path.GetFileName(folder).Split(' ')[0];
+                }
+                if (imageCounter <= 0 && !noBackground.Contains(folder))
+                {
+                    Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " Images");
+                    id = Path.GetFileName(folder).Split(' ')[0];
+                }
+                if (musicCounter <= 0)
+                {
+                    Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) +  " Music");
+                    id = Path.GetFileName(folder).Split(' ')[0];
+                }
+                if (otherCounter >= 1)
+                {
+                    Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " Other");
+                    id = Path.GetFileName(folder).Split(' ')[0];
+                }
+                if (id != "")
+                {
+                    try
+                    {
+                        int number = Convert.ToInt32(id);
+                        if (errorList.Contains(number.ToString()))
                         {
-                            if (Path.GetFileName(file) == bg || Path.GetFileName(file).ToLower() == bg.ToLower()) //Sometimes in the file its BG.png, but the file is called bg.png
-                            {
-                                delete = false;
-                            }
+                            Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " is suspected to be duplicated");
+                        }
+                        else
+                        {
+                            errorList.Add(number.ToString());
                         }
                     }
-
-                    if (delete)
+                    catch (Exception)
                     {
-                        DeleteFile(file);
+                        if (errorList.Contains(Path.GetFileName(folder)))
+                        {
+                            Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " is suspected to be duplicated");
+                        }
+                        else
+                        {
+                            errorList.Add(Path.GetFileName(folder));
+                        }
                     }
-                }
-
-                foreach (string dir in Directory.EnumerateDirectories(currentFolder)) //Deletes all the folders inside the Beatmap folder -> Mostly SB (Storyboard folder)
-                {
-                    DeleteFolder(dir, backgrounds);
-                }
-
-                if (percent > lastPercent) //If we have gone up by one percent it will print again
-                {
-                    Console.WriteLine("Percent: " + percent + "%");
-                    lastPercent = percent;
                 }
             }
 
-            //s is the amount of storage cleard in bytes
+            Console.WriteLine("Press ENTER to check for duplicate Beatmaps");
+            Console.ReadLine();
 
+            List<string> numbers = new List<string>();
+
+            foreach (string folder in beatmapFolders)
+            {
+                string id = Path.GetFileName(folder).Split(' ')[0];
+                try
+                {
+                    int number = Convert.ToInt32(id);
+                    if (numbers.Contains(number.ToString()))
+                    {
+                        Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " is suspected to be duplicated");
+                    }
+                    else
+                    {
+                        numbers.Add(number.ToString());
+                    }
+                }
+                catch (Exception)
+                {
+                    if (numbers.Contains(Path.GetFileName(folder)))
+                    {
+                        Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " is suspected to be duplicated");
+                    }
+                    else
+                    {
+                        numbers.Add(Path.GetFileName(folder));
+                    }
+                }
+            }
+
+            Console.WriteLine("Press ENTER to end");
+            Console.ReadLine();
+
+            string fileWrite = "";
+
+            foreach (string text in errorList)
+            {
+                fileWrite += text + ",";
+            }
+
+            fileWrite = fileWrite.Trim(','); //Deltes trailing ,
+
+            File.WriteAllText(Directory.GetCurrentDirectory() + "\\ErrorList.txt", fileWrite);
+        }
+
+        public static List<string> GetVeryAllFiles(string folder)
+        {
+            List<string> allFiles = Directory.EnumerateFiles(folder).ToList<string>();
+            foreach (string subFolder in Directory.EnumerateDirectories(folder))
+            {
+                allFiles.AddRange(GetVeryAllFiles(subFolder));
+            }
+            return allFiles;
+        }
+
+        public static string TextBalancer(int desiredLength, string text, int type)
+        {
+            string output = "";
+            switch (type)
+            {
+                case 0:
+                    int missing = desiredLength - text.Length;
+
+                    if (missing <= 0)
+                    {
+                        return text;
+                    }
+                    else
+                    {
+                        int missing1 = missing / 2;
+                        int missing2 = missing - missing1;
+                        string output2 = "";
+
+                        for (int i = 0; i < missing1; i++)
+                        {
+                            output += " ";
+                        }
+
+                        for (int i = 0; i < missing2; i++)
+                        {
+                            output2 += " ";
+                        }
+
+                        return output + text + output2;
+                    }
+                    
+                case 1:
+                    if (desiredLength - text.Length <= 0)
+                    {
+                        return text;
+                    }
+                    else
+                    {
+                        for (int i = desiredLength; i > text.Length; i--)
+                        {
+                            output += " ";
+                        }
+
+                        return output + text;
+                    }
+
+                case 2:
+                    if (desiredLength-text.Length <= 0)
+                    {
+                        return text;
+                    }
+                    else
+                    {
+                        for (int i = text.Length; i < desiredLength; i++)
+                        {
+                            output += " ";
+                        }
+
+                        return text + output;
+                    }
+                default:
+                    return text;
+            }
+            
+        }
+       
+
+        //Deletes a File and adds its size to the static s
+        static public void DeleteFile(string file)
+        {
+            s += new FileInfo(file).Length;
+            File.Delete(file);
+            Console.Write(TextBalancer(50, Path.GetFileName(file), 2) + " - Deleted");
+            FileCount++;
+        }
+
+        //Function deletes a whole folder exept if there is a background in it -> then it will delte everything exept the background file
+        static public void DeleteFolder(string folder, List<string> saveFiles) {
+            foreach (string file in Directory.EnumerateFiles(folder))
+            {
+                Console.Write("[" + output + "%] ");
+                if (!saveFiles.Contains(Path.GetFileName(file).ToLower()))
+                {
+                    DeleteFile(file);
+                }
+                Console.WriteLine("");
+            }
+            foreach (string dir in Directory.EnumerateDirectories(folder))
+            {
+                DeleteFolder(dir, saveFiles);
+            }
+            if (Directory.EnumerateFiles(folder).Count() + Directory.EnumerateDirectories(folder).Count() == 0) // After deleting everything exept background, if there are files left in the folder it gets spared
+            {
+                Directory.Delete(folder);
+            }
+        }
+
+        //Function to get all subfolders of all subfolder of all subfolder ...
+        static public List<string> GetSubFolders(string folder, List<string> addHere)
+        {
+            foreach (string subFolder in Directory.EnumerateDirectories(folder))
+            {
+                addHere.Add(subFolder);
+                GetSubFolders(subFolder, addHere);
+            }
+
+            return addHere;
+        }
+
+        static public void PrintStatistics()
+        {
             Console.WriteLine(FileCount + " Files were deleted");
             if (s >= 1000000000.0)
             {
@@ -153,219 +389,8 @@ namespace OsuMapCleaner
             {
                 Console.WriteLine(s + " B were saved"); //Else its    x B
             }
-
-
-            Console.WriteLine("#-----------------------#");
-            Console.WriteLine("Checking all the Folders for missing Background");
-            Console.WriteLine("#-----------------------#");
-
-            //Finding out if all the maps have at least one background (Exept when thats intended)
-            foreach (string folder in beatmapFolders)
-            {
-                bool hasBackground = false;
-                if (noBackgroundList.Count > 0)
-                {
-                    if (noBackgroundList.Contains(folder)) //If the beatmap doesnt have a background (as read from the .osu file)
-                    {
-                        hasBackground = true;
-                    }
-                }
-
-                List<string> subFolders = new List<string>();
-
-                getSubFolders(folder, subFolders);
-
-                subFolders.Add(folder);
-
-                foreach (string subFolder in subFolders)
-                {
-                    List<string> files = Directory.EnumerateFiles(subFolder).ToList<string>();
-
-                    foreach (string file in files)
-                    {
-                        if (imageList.Contains(Path.GetExtension(file).ToLower()))
-                        {
-                            hasBackground = true;
-                        }
-                    }
-                }
-
-                if (!hasBackground)
-                {
-                    string outp = folder.Split('\\')[folder.Split('\\').Length - 1];
-                    string number = outp.Split(' ')[0];
-
-                    if (!numbers.Contains(number))
-                    {
-                        numbers.Add(number);        //Lists the beatmap ids when its missing
-                    }
-
-                    Console.WriteLine("Check: " + outp);
-                }
-            }
-            Console.WriteLine("#-----------------------#");
-            Console.WriteLine("Checking all Folders for missing Audio");
-            Console.WriteLine("#-----------------------#");
-
-
-            //Finding out if all the maps have at least one music file
-            foreach (string folder in beatmapFolders)
-            {
-                List<string> files = Directory.EnumerateFiles(folder).ToList<string>();
-                bool hasMusic = false;
-                foreach (string file in files)
-                {
-                    if (musicWhiteList.Contains(Path.GetExtension(file).ToLower()))
-                    {
-                        hasMusic = true;
-                    }
-                }
-                if (!hasMusic)
-                {
-                    string outp = folder.Split('\\')[folder.Split('\\').Length - 1];
-                    string number = outp.Split(' ')[0];
-                    if (!numbers.Contains(number))
-                    {
-                        numbers.Add(number);        //Lists the beatmap ids when its missing
-                    }
-
-                    Console.WriteLine("Check: " + outp);
-                }
-            }
-
-
-            Console.WriteLine("#-----------------------#");
-            Console.WriteLine("Checking all Folders for missing Osu Files");
-            Console.WriteLine("#-----------------------#");
-
-            foreach (string folder in beatmapFolders)
-            {
-                List<string> files = Directory.EnumerateFiles(folder).ToList<string>();
-                bool hasBeatmap = false;
-                foreach (string file in files)
-                {
-                    if (Path.GetExtension(file).ToLower() == ".osu")
-                    {
-                        hasBeatmap = true;
-                    }
-                }
-                if (!hasBeatmap)
-                {
-                    string outp = folder.Split('\\')[folder.Split('\\').Length - 1];
-                    string number = outp.Split(' ')[0];
-                    if (!numbers.Contains(number))
-                    {
-                        numbers.Add(number);        //Lists the beatmap ids when its missing
-                    }
-
-                    Console.WriteLine("Check: " + outp);
-                }
-            }
-
-
-            //Creates the Text for the error file
-            string fileWrite = "";
-
-            foreach (string number in numbers)
-            {
-                try
-                {
-                    Convert.ToInt32(number); // This sorts out all the Beatmaps without ids
-                    fileWrite += number + ",";
-                }
-                catch (Exception)
-                {
-
-                }
-            }
-
-            fileWrite = fileWrite.Trim(','); //Deltes trailing ,
-
-            Console.WriteLine("#-----------------------#");
-            Console.WriteLine("Checking all Folders for Duplicates");
-            Console.WriteLine("#-----------------------#");
-
-
-            List<string> allThemNumbers = new List<string>();
-
-            foreach (string folder in beatmapFolders)
-            {
-                string outp = folder.Split('\\')[folder.Split('\\').Length - 1];
-                string number = outp.Split(' ')[0];
-                if (!allThemNumbers.Contains(number))
-                {
-                    try
-                    {
-                        Convert.ToInt32(number); // This sorts out all the Beatmaps without ids
-                        allThemNumbers.Add(number);
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Check " + outp);
-                }
-
-            }
-
-            File.WriteAllText(Directory.GetCurrentDirectory() + "\\ErrorList.txt", fileWrite);
-            Console.WriteLine("#-----------------------#");
-            Console.WriteLine("And were done");
-            Console.WriteLine("#-----------------------#");
-            Console.ReadLine();
         }
-
-        //Deletes a File and adds its size to the static s
-        static public void DeleteFile(string file)
-        {
-            s += new FileInfo(file).Length;
-            File.Delete(file);
-            Console.WriteLine(file);
-            FileCount++;
-        }
-
-        //Function deletes a whole folder exept if there is a background in it -> then it will delte everything exept the background file
-        static public void DeleteFolder(string folder, List<string> backgrounds) {
-            foreach (string file in Directory.EnumerateFiles(folder))
-            {
-                bool isBackground = false;
-                foreach (string bg in backgrounds)
-                {
-                    if (Path.GetFileName(bg) == Path.GetFileName(file) || Path.GetFileName(bg) == Path.GetFileName(file).ToLower())
-                    {
-                        isBackground = true;
-                    }
-                }
-
-                if (!isBackground)
-                {
-                    DeleteFile(file);
-                }
-            }
-            foreach (string dir in Directory.EnumerateDirectories(folder))
-            {
-                DeleteFolder(dir, backgrounds);
-            }
-            if (Directory.EnumerateFiles(folder).Count() + Directory.EnumerateDirectories(folder).Count() == 0) // After deleting everything exept background, if there are files left in the folder it gets spared
-            {
-                Directory.Delete(folder);
-            }
-        }
-
-        //Function to get all subfolders of all subfolder of all subfolder ...
-        static public List<string> getSubFolders(string folder, List<string> addHere)
-        {
-            foreach (string subFolder in Directory.EnumerateDirectories(folder))
-            {
-                addHere.Add(subFolder);
-                getSubFolders(subFolder, addHere);
-            }
-
-            return addHere;
-        }
+        
     }
        
 }
