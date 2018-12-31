@@ -28,6 +28,8 @@ namespace OsuMapCleaner
 
         static List<string> errorList = new List<string>();
 
+        static string lastLine = "";
+
         static void Main(string[] args)
         {
             List<string> beatmapFolders = Directory.EnumerateDirectories(workingDirectory).ToList<string>();
@@ -50,66 +52,74 @@ namespace OsuMapCleaner
                     if (Path.GetExtension(file).ToLower() == ".osu")
                     {
                         string lines = File.ReadAllText(file);
-                        lines = lines.Split(new[] { "AudioFilename: " }, StringSplitOptions.None)[1];
-                        string audioFile = lines.Split(new char[] { '\r', '\n'})[0];
-                        saveFiles.Add(Path.GetFileName(audioFile).ToLower());
-
-                        string[] lines1 = lines.Split(new[] { "Video," }, StringSplitOptions.None);
-                        
-                        if (lines1.Length >= 2)
+                        if (lines != "")
                         {
-                            lines = lines1[0] + lines1[1].Split(new[] { "\r" }, StringSplitOptions.None)[1];
-                        }
+                            lines = lines.Split(new[] { "AudioFilename: " }, StringSplitOptions.None)[1];
+                            string audioFile = lines.Split(new char[] { '\r', '\n' })[0];
+                            saveFiles.Add(Path.GetFileName(audioFile).ToLower());
 
+                            string[] lines1 = lines.Split(new[] { "Video," }, StringSplitOptions.None);
 
-                        string[] lines2 = lines.Split(new[] { ",\"" }, StringSplitOptions.None);
-                        if (lines2.Length <= 1)
-                        {
-                            noBackground.Add(beatmapFolder);
-                        }
-                        else
-                        {
-                            string bg = lines2[1].Split(new[] { "\"" }, StringSplitOptions.None)[0];
-                            if (imageList.Contains(Path.GetExtension(bg).ToLower()))
+                            if (lines1.Length >= 2)
                             {
-                                saveFiles.Add(Path.GetFileName(bg).ToLower());
+                                lines = lines1[0] + lines1[1].Split(new[] { "\r" }, StringSplitOptions.None)[1];
+                            }
+
+
+                            string[] lines2 = lines.Split(new[] { ",\"" }, StringSplitOptions.None);
+                            if (lines2.Length <= 1)
+                            {
+                                noBackground.Add(beatmapFolder);
                             }
                             else
                             {
-                                if (lines2.Length <= 2)
+                                string bg = lines2[1].Split(new[] { "\"" }, StringSplitOptions.None)[0];
+                                if (imageList.Contains(Path.GetExtension(bg).ToLower()))
                                 {
-                                    noBackground.Add(beatmapFolder);
+                                    saveFiles.Add(Path.GetFileName(bg).ToLower());
                                 }
                                 else
                                 {
-                                    bg = lines2[2].Split(new[] { "\"" }, StringSplitOptions.None)[0];
-                                    if (imageList.Contains(Path.GetExtension(bg).ToLower()))
-                                    {
-                                        saveFiles.Add(Path.GetFileName(bg).ToLower());
-                                    }
-                                    else
+                                    if (lines2.Length <= 2)
                                     {
                                         noBackground.Add(beatmapFolder);
                                     }
+                                    else
+                                    {
+                                        bg = lines2[2].Split(new[] { "\"" }, StringSplitOptions.None)[0];
+                                        if (imageList.Contains(Path.GetExtension(bg).ToLower()))
+                                        {
+                                            saveFiles.Add(Path.GetFileName(bg).ToLower());
+                                        }
+                                        else
+                                        {
+                                            noBackground.Add(beatmapFolder);
+                                        }
+                                    }
                                 }
                             }
+                            saveFiles.Add(Path.GetFileName(file).ToLower());
                         }
-                        
-
-                        saveFiles.Add(Path.GetFileName(file).ToLower());
                     }
                 }
 
                 foreach (string file in files)
                 {
-                    Console.Write("[" + output + "%] ");
                     if (!saveFiles.Contains(Path.GetFileName(file).ToLower()))
                     {
-
+                        lastLine = "[" + output + "%] ";
+                        Console.Write("[" + output + "%] xd");
                         DeleteFile(file);
+                        Console.WriteLine("");
+                    } else
+                    {
+                        if (lastLine != "[" + output + "%] ")
+                        {
+                            lastLine = "[" + output + "%] ";
+                            Console.Write("[" + output + "%] ");
+                            Console.WriteLine("");
+                        }
                     }
-                    Console.WriteLine("");
-                    
                 }
 
                 foreach (string subFolder in subFolders)
