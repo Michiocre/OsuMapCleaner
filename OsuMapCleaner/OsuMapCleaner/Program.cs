@@ -32,13 +32,13 @@ namespace OsuMapCleaner
 
         static void Main(string[] args)
         {
-            if (Path.GetFileName(osuFolder) != "Songs")
+            if (Path.GetFileName(workingDirectory) != "Songs")
             {
                 Console.WriteLine("You are not executing the programm from the Songs folder, this could delete files you dont want to delete.");
-                Console.WriteLine("Enter the name of the current folder to continue: (" + Path.GetFileName(osuFolder) + ")");
+                Console.WriteLine("Enter the name of the current folder to continue: (" + Path.GetFileName(workingDirectory) + ")");
                 String input = Console.ReadLine();
 
-                if (input != Path.GetFileName(osuFolder)) {
+                if (input != Path.GetFileName(workingDirectory)) {
                     Console.WriteLine("Execution terminated. Press ENTER to close.");
                     Console.ReadLine();
                     System.Environment.Exit(1);
