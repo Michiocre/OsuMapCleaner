@@ -75,7 +75,7 @@ namespace OsuMapCleaner
 
                             if (lines1.Length >= 2)
                             {
-                                lines = lines1[0] + lines1[1].Split(new[] { "\r" }, StringSplitOptions.None)[1];
+                                lines = lines1[0] + lines1[1].Split(new[] { '\r', '\n' }, StringSplitOptions.None)[1];
                             }
 
 
