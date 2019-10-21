@@ -16,7 +16,7 @@ namespace OsuMapCleaner
         static int FileCount = 0;
         static long s = 0;
 
-        static string workingDirectory = Directory.GetCurrentDirectory();
+        static string workingDirectory = Path.GetDirectoryName(Directory.GetCurrentDirectory()) + @"\Songs";
         static string osuFolder = Path.GetDirectoryName(workingDirectory);
         static string output = "";
         
@@ -28,119 +28,169 @@ namespace OsuMapCleaner
 
         static List<string> errorList = new List<string>();
 
+        static List<string> completed = new List<string>();
+        static List<string> oldCompleted = new List<string>();
+
         static string lastLine = "";
+
+        static string keepMode = "k";
 
         static void Main(string[] args)
         {
-            if (Path.GetFileName(workingDirectory) != "Songs")
+            if (Path.GetFileName(Directory.GetCurrentDirectory()) != "OsuMapCleaner")
             {
-                Console.WriteLine("You are not executing the programm from the Songs folder, this could delete files you dont want to delete.");
-                Console.WriteLine("Enter the name of the current folder to continue: (" + Path.GetFileName(workingDirectory) + ")");
-                String input = Console.ReadLine();
+                Console.WriteLine("You are not executing the programm from the OsuMapCleaner folder, this could delete files you dont want to delete.");
+                Console.WriteLine("This executable should be locatet in: /osu!/OsuMapCleaner");
+                Console.WriteLine("Execution terminated. Press ENTER to close.");
+                Console.ReadLine();
+                System.Environment.Exit(1);
+            }
+            if (!Directory.Exists(workingDirectory))
+            {
+                Console.WriteLine("The songs folder could not be found");
+                Console.WriteLine("This executable should be locatet in: /osu!/OsuMapCleaner");
+                Console.WriteLine("Execution terminated. Press ENTER to close.");
+                Console.ReadLine();
+                System.Environment.Exit(1);
+            }
 
-                if (input != Path.GetFileName(workingDirectory)) {
-                    Console.WriteLine("Execution terminated. Press ENTER to close.");
-                    Console.ReadLine();
-                    System.Environment.Exit(1);
+            Console.WriteLine("Type 'Config' to open customize the execution");
+            string answer = Console.ReadLine();
+            if (answer == "Config" || answer == "C" || answer == "c")
+            {
+                Console.WriteLine("Do you want to rescan the whole songs folder? (Y/N)");
+                answer = Console.ReadLine();
+                if (!(answer == "Y" || answer == "y"))
+                {
+                    string completedFile = Directory.GetCurrentDirectory() + @"\MapCleanerCompleted.txt";
+
+                    if (File.Exists(completedFile))
+                    {
+                        oldCompleted = File.ReadAllText(completedFile).Split(new[] { ',' }).ToList<string>();
+                    }
+                }
+
+                Console.WriteLine("Do you want to delete duplicate folder, keep noVideo or keep withVideo? (N/W)");
+                answer = Console.ReadLine();
+                if (answer == "N" || answer == "n")
+                {
+                    keepMode = "n";
+                }
+                else if (answer == "W" || answer == "w")
+                {
+                    keepMode = "w";
                 }
             }
+            
 
             List<string> beatmapFolders = Directory.EnumerateDirectories(workingDirectory).ToList<string>();
 
             int i = 0;
             foreach (string beatmapFolder in beatmapFolders)
             {
-                string percent = (100 * i / beatmapFolders.Count).ToString();
+                string id = Path.GetFileName(beatmapFolder).Split(' ')[0];
 
-                output = TextBalancer(3, percent, 1);
-                
-
-                List<string> files = Directory.EnumerateFiles(beatmapFolder).ToList<string>();
-                List<string> subFolders = Directory.EnumerateDirectories(beatmapFolder).ToList<string>();
-
-                List<string> saveFiles = new List<string>();
-
-                foreach (string file in files)
+                if (!oldCompleted.Contains(id))
                 {
-                    if (Path.GetExtension(file).ToLower() == ".osu")
+                    string percent = (100 * i / beatmapFolders.Count).ToString();
+
+                    output = TextBalancer(3, percent, 1);
+
+
+                    List<string> files = Directory.EnumerateFiles(beatmapFolder).ToList<string>();
+                    List<string> subFolders = Directory.EnumerateDirectories(beatmapFolder).ToList<string>();
+
+                    List<string> saveFiles = new List<string>();
+
+                    foreach (string file in files)
                     {
-                        string lines = File.ReadAllText(file);
-                        if (lines != "")
+                        if (Path.GetExtension(file).ToLower() == ".osu")
                         {
-                            lines = lines.Split(new[] { "AudioFilename: " }, StringSplitOptions.None)[1];
-                            string audioFile = lines.Split(new char[] { '\r', '\n' })[0];
-                            saveFiles.Add(Path.GetFileName(audioFile).ToLower());
-
-                            string[] lines1 = lines.Split(new[] { "Video," }, StringSplitOptions.None);
-
-                            if (lines1.Length >= 2)
+                            string text = File.ReadAllText(file);
+                            if (text != "")
                             {
-                                lines = lines1[0] + lines1[1].Split(new[] { '\r', '\n' }, StringSplitOptions.None)[1];
-                            }
+                                text = text.Split(new[] { "AudioFilename: " }, StringSplitOptions.None)[1];
+                                string audioFile = text.Split(new char[] { '\r', '\n' })[0];
+                                saveFiles.Add(Path.GetFileName(audioFile).ToLower());
 
+                                string[] textParts = text.Split(new[] { "Video," }, StringSplitOptions.None);
 
-                            string[] lines2 = lines.Split(new[] { ",\"" }, StringSplitOptions.None);
-                            if (lines2.Length <= 1)
-                            {
-                                noBackground.Add(beatmapFolder);
-                            }
-                            else
-                            {
-                                string bg = lines2[1].Split(new[] { "\"" }, StringSplitOptions.None)[0];
-                                if (imageList.Contains(Path.GetExtension(bg).ToLower()))
+                                if (textParts.Length >= 2)
                                 {
-                                    saveFiles.Add(Path.GetFileName(bg).ToLower());
+                                    try
+                                    {
+                                        text = textParts[0] + textParts[1].Split(new[] { '\r' }, StringSplitOptions.None)[1];
+                                    }
+                                    catch (Exception)
+                                    {
+                                        text = textParts[0] + textParts[1].Split(new[] { '\r', '\n' }, StringSplitOptions.None)[1];
+                                    }
+                                }
+
+                                textParts = text.Split(new[] { ",\"" }, StringSplitOptions.None);
+                                if (textParts.Length <= 1)
+                                {
+                                    noBackground.Add(beatmapFolder);
                                 }
                                 else
                                 {
-                                    if (lines2.Length <= 2)
+                                    string bg = textParts[1].Split(new[] { "\"" }, StringSplitOptions.None)[0];
+                                    if (imageList.Contains(Path.GetExtension(bg).ToLower()))
                                     {
-                                        noBackground.Add(beatmapFolder);
+                                        saveFiles.Add(Path.GetFileName(bg).ToLower());
                                     }
                                     else
                                     {
-                                        bg = lines2[2].Split(new[] { "\"" }, StringSplitOptions.None)[0];
-                                        if (imageList.Contains(Path.GetExtension(bg).ToLower()))
-                                        {
-                                            saveFiles.Add(Path.GetFileName(bg).ToLower());
-                                        }
-                                        else
+                                        if (textParts.Length <= 2)
                                         {
                                             noBackground.Add(beatmapFolder);
                                         }
+                                        else
+                                        {
+                                            bg = textParts[2].Split(new[] { "\"" }, StringSplitOptions.None)[0];
+                                            if (imageList.Contains(Path.GetExtension(bg).ToLower()))
+                                            {
+                                                saveFiles.Add(Path.GetFileName(bg).ToLower());
+                                            }
+                                            else
+                                            {
+                                                noBackground.Add(beatmapFolder);
+                                            }
+                                        }
                                     }
                                 }
+                                saveFiles.Add(Path.GetFileName(file).ToLower());
                             }
-                            saveFiles.Add(Path.GetFileName(file).ToLower());
                         }
                     }
-                }
 
-                foreach (string file in files)
-                {
-                    if (!saveFiles.Contains(Path.GetFileName(file).ToLower()))
+                    foreach (string file in files)
                     {
-                        lastLine = "[" + output + "%] ";
-                        Console.Write("[" + output + "%] xd");
-                        DeleteFile(file);
-                        Console.WriteLine("");
-                    } else
-                    {
-                        if (lastLine != "[" + output + "%] ")
+                        if (!saveFiles.Contains(Path.GetFileName(file).ToLower()))
                         {
                             lastLine = "[" + output + "%] ";
-                            Console.Write("[" + output + "%] ");
+                            Console.Write("[" + output + "%]");
+                            DeleteFile(file);
                             Console.WriteLine("");
                         }
+                        else
+                        {
+                            if (lastLine != "[" + output + "%] ")
+                            {
+                                lastLine = "[" + output + "%] ";
+                                Console.Write("[" + output + "%] ");
+                                Console.WriteLine("");
+                            }
+                        }
                     }
-                }
 
-                foreach (string subFolder in subFolders)
-                {
-                    DeleteFolder(subFolder, saveFiles);
-                }
+                    foreach (string subFolder in subFolders)
+                    {
+                        DeleteFolder(subFolder, saveFiles);
+                    }
 
-                i++;
+                    i++;
+                }
             }
 
 
@@ -148,7 +198,7 @@ namespace OsuMapCleaner
             PrintStatistics();
             Console.WriteLine("##################################");
 
-            Console.WriteLine("Press ENTER to proced to the after Test where it checks every Folder for missing Items");
+            Console.WriteLine("Press ENTER to proceed to the after Test where it checks every Folder for missing Items");
             Console.ReadLine();
 
             foreach (string folder in beatmapFolders)
@@ -177,52 +227,35 @@ namespace OsuMapCleaner
                         otherCounter++;
                     }
                 }
-                string id = "";
+                string id = Path.GetFileName(folder).Split(' ')[0];
+                bool error = false;
                 if (beatmapCounter <= 0)
                 {
                     Console.WriteLine(TextBalancer(75,Path.GetFileName(folder), 2) + " Beatmaps");
-                    id = Path.GetFileName(folder).Split(' ')[0];
+                    error = true;
                 }
                 if (imageCounter <= 0 && !noBackground.Contains(folder))
                 {
                     Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " Images");
-                    id = Path.GetFileName(folder).Split(' ')[0];
+                    error = true;
                 }
                 if (musicCounter <= 0)
                 {
                     Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) +  " Music");
-                    id = Path.GetFileName(folder).Split(' ')[0];
+                    error = true;
                 }
                 if (otherCounter >= 1)
                 {
                     Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " Other");
-                    id = Path.GetFileName(folder).Split(' ')[0];
+                    error = true;
                 }
-                if (id != "")
+                if (error)
                 {
-                    try
-                    {
-                        int number = Convert.ToInt32(id);
-                        if (errorList.Contains(number.ToString()))
-                        {
-                            Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " is suspected to be duplicated");
-                        }
-                        else
-                        {
-                            errorList.Add(number.ToString());
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        if (errorList.Contains(Path.GetFileName(folder)))
-                        {
-                            Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " is suspected to be duplicated");
-                        }
-                        else
-                        {
-                            errorList.Add(Path.GetFileName(folder));
-                        }
-                    }
+                    errorList.Add(id);
+                }
+                else
+                {
+                    completed.Add(id);
                 }
             }
 
@@ -240,6 +273,7 @@ namespace OsuMapCleaner
                     if (numbers.Contains(number.ToString()))
                     {
                         Console.WriteLine(TextBalancer(75, Path.GetFileName(folder), 2) + " is suspected to be duplicated");
+                        DeleteDups(number, beatmapFolders);
                     }
                     else
                     {
@@ -271,7 +305,66 @@ namespace OsuMapCleaner
 
             fileWrite = fileWrite.Trim(','); //Deltes trailing ,
 
-            File.WriteAllText(Directory.GetCurrentDirectory() + "\\ErrorList.txt", fileWrite);
+            File.WriteAllText(Directory.GetCurrentDirectory() + "\\MapCleanerErrors.txt", fileWrite);
+
+            fileWrite = "";
+
+            foreach (string text in completed)
+            {
+                fileWrite += text + ",";
+            }
+
+            fileWrite = fileWrite.Trim(','); //Deltes trailing ,
+
+            File.WriteAllText(Directory.GetCurrentDirectory() + "\\MapCleanerCompleted.txt", fileWrite);
+        }
+
+        public static void DeleteDups(int number, List<string> beatmapFolders)
+        {
+            if (keepMode == "w" || keepMode == "n")
+            {
+                List<string> dups = new List<string>();
+                foreach (string folder in beatmapFolders)
+                {
+                    string id = Path.GetFileName(folder).Split(' ')[0];
+                    if (id == number.ToString())
+                    {
+                        dups.Add(folder);
+                    }
+                }
+
+                int keep = 0;
+
+                if (keepMode == "n")
+                {
+                    for (int i = 0; i < dups.Count; i++)
+                    {
+                        if (dups[i].Contains("[no video]"))
+                        {
+                            keep = i;
+                        }
+                    }
+                }
+
+                if (keepMode == "w")
+                {
+                    for (int i = 0; i < dups.Count; i++)
+                    {
+                        if (!dups[i].Contains("[no video]"))
+                        {
+                            keep = i;
+                        }
+                    }
+                }
+
+                for (int i = 0; i < dups.Count; i++)
+                {
+                    if (i != keep)
+                    {
+                        DeleteFolder(dups[i], new List<string>());
+                    }
+                }
+            }
         }
 
         public static List<string> GetVeryAllFiles(string folder)
@@ -412,8 +505,7 @@ namespace OsuMapCleaner
             {
                 Console.WriteLine(s + " B were saved"); //Else its    x B
             }
-        }
-        
+        }        
     }
        
 }
